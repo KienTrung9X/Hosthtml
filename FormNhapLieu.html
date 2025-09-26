@@ -650,17 +650,42 @@ let itemsData = [], formData = [];
 let masterOptions = null;
 let masterMachines = null;
 
-// Function to write data to Excel
-async function writeToExcel(formData, itemsData) {
+// Hàm xử lý submit form
+async function handleFormSubmit(event) {
+    event.preventDefault();
+    console.log('Form submitted');
+    
     try {
+        // Get form data
+        const formData = {
+            maintenanceDate: document.getElementById('maintenanceDate').value,
+            machineType: document.getElementById('machineType').value,
+            machineNumber: document.getElementById('machineNumber').value,
+            technician: document.getElementById('technician').value
+        };
+        
+        console.log('Form data:', formData);
+        console.log('Items data:', itemsData);
+
+        // Validate if we have items
+        if (itemsData.length === 0) {
+            showMessage("Vui lòng thêm ít nhất một vật tư!", "error");
+            return false;
+        }
+
+        // Try to write to Excel
         await Excel.run(async (context) => {
+            console.log('Starting Excel.run');
+            
             // Get the sheet named "Maintenance Table4"
             let sheet = context.workbook.worksheets.getItem("Maintenance Table4");
+            console.log('Got sheet reference');
             
             // Get the last row with data
             let range = sheet.getUsedRange();
             await context.sync();
             let lastRow = range.rowCount;
+            console.log('Last row:', lastRow);
             
             // For each item in itemsData, create a new row
             itemsData.forEach((item, index) => {
@@ -669,27 +694,31 @@ async function writeToExcel(formData, itemsData) {
                 // Write form data and item data to the row
                 let rowRange = sheet.getRangeByIndexes(newRow, 0, 1, 8);
                 rowRange.values = [[
-                    formData.maintenanceDate, // Date
-                    formData.machineType,     // Maintenance Type
-                    formData.machineNumber,   // Machine Number
-                    formData.technician,      // Technician
-                    item.partNumber,          // Part Number
-                    item.description,         // Description
-                    item.quantity,            // Quantity
-                    item.remarks              // Remarks
+                    formData.maintenanceDate,
+                    formData.machineType,
+                    formData.machineNumber,
+                    formData.technician,
+                    item.partNumber,
+                    item.description,
+                    item.quantity,
+                    item.remarks
                 ]];
+                console.log('Writing row:', newRow);
             });
             
             await context.sync();
+            console.log('Excel write completed');
             showMessage("Dữ liệu đã được lưu vào Excel thành công!", "success");
             
             // Clear form after successful save
             clearForm();
         });
     } catch (error) {
-        console.error(error);
-        showMessage("Lỗi khi lưu dữ liệu vào Excel: " + error.message, "error");
+        console.error('Error in submit handler:', error);
+        showMessage("Lỗi khi lưu dữ liệu: " + error.message, "error");
     }
+    
+    return false;
 }
 
 // Định nghĩa lại maintenanceTypeItems với danh sách cụ thể
