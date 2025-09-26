@@ -256,6 +256,7 @@ input[type="date"]::-moz-calendar-picker-indicator {
   </div>
 
   <form id="excelForm">
+    <button type="button" onclick="writeToExcel()" class="btn btn-primary" style="margin-bottom: 10px;">Lưu vào Excel</button>
     <div class="form-row">
       <div>
         <label for="machine">Máy:</label>
@@ -593,7 +594,6 @@ input[type="date"]::-moz-calendar-picker-indicator {
       <!-- XÓA nút Lưu và Xuất file, chỉ giữ lại Làm mới và Copy Clipboard -->
       <button type="button" class="btn btn-secondary" onclick="clearForm()">🔄 Làm mới</button>
       <button type="button" class="btn btn-success" onclick="copyToClipboard()">📋 Copy Clipboard</button>
-      <button type="submit" class="btn btn-primary">Lưu vào Excel</button>
     </div>
   </form>
 </div>
@@ -649,6 +649,77 @@ input[type="date"]::-moz-calendar-picker-indicator {
 let itemsData = [], formData = [];
 let masterOptions = null;
 let masterMachines = null;
+
+// Initialize Office
+Office.onReady((info) => {
+    if (info.host === Excel.HostType.Excel) {
+        console.log('Excel Add-in initialized');
+    } else {
+        console.error('This is not running in Excel');
+    }
+});
+
+// Function to write to Excel
+async function writeToExcel() {
+    try {
+        if (itemsData.length === 0) {
+            showMessage("Vui lòng thêm ít nhất một vật tư!", "error");
+            return;
+        }
+
+        await Excel.run(async (context) => {
+            console.log("Starting Excel write...");
+            
+            // Get the active workbook
+            const sheet = context.workbook.worksheets.getItem("Maintenance Table4");
+            console.log("Got sheet reference");
+
+            // Get current used range to find last row
+            const range = sheet.getUsedRange();
+            await context.sync();
+            const lastRow = range.rowCount;
+            console.log("Last row:", lastRow);
+
+            // Get form data
+            const maintenanceDate = document.getElementById('maintenanceDate').value;
+            const machineType = document.getElementById('machineType').value;
+            const machineNumber = document.getElementById('machineNumber').value;
+            const technician = document.getElementById('technician').value;
+
+            console.log("Form data:", {
+                maintenanceDate,
+                machineType,
+                machineNumber,
+                technician
+            });
+
+            // Write each item to Excel
+            itemsData.forEach((item, index) => {
+                const rowIndex = lastRow + index;
+                console.log("Writing row:", rowIndex + 1);
+                const newRow = sheet.getRangeByIndexes(rowIndex, 0, 1, 8);
+                newRow.values = [[
+                    maintenanceDate,
+                    machineType,
+                    machineNumber,
+                    technician,
+                    item.partNumber,
+                    item.description,
+                    item.quantity,
+                    item.remarks || ''
+                ]];
+            });
+
+            await context.sync();
+            console.log("Excel write completed");
+            showMessage("Đã lưu thành công vào Excel!", "success");
+            clearForm(); // Clear form after successful save
+        });
+    } catch (error) {
+        console.error("Excel error:", error);
+        showMessage("Lỗi khi lưu vào Excel: " + error.message, "error");
+    }
+}
 
 // Hàm xử lý submit form
 async function handleFormSubmit(event) {
