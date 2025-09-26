@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <script>
+        // Hàm được gọi từ manifest để mở form
+        function openExternalForm() {
+            // Mở form nhập liệu trong một cửa sổ mới
+            window.open('https://KienTrung9X.github.io/Hosthtml/FormNhapLieu.html', '_blank', 'width=850,height=800');
+        }
+
+        // Lắng nghe tin nhắn từ form ngoài
+        window.addEventListener('message', handlePostMessage);
+
+        function handlePostMessage(event) {
+            // Kiểm tra nguồn gốc của tin nhắn để đảm bảo an toàn
+            // if (event.origin !== 'https://KienTrung9X.github.io') {
+            //     console.log('Tin nhắn từ nguồn không xác định.');
+            //     return;
+            // }
+
+            if (event.data && event.data.type === 'submitForm') {
+                writeDataToExcel(event.data.payload);
+            }
+        }
+
+        async function writeDataToExcel(data) {
+            try {
+                await Excel.run(async (context) => {
+                    const sheet = context.workbook.worksheets.getActiveWorksheet();
+                    
+                    let dataToWrite = [];
+                    data.items.forEach(item => {
+                        const row = [
+                            data.maintenanceDate,
+                            data.shift,
+                            data.machine,
+                            data.machineType,
+                            item.code,
+                            item.desc,
+                            item.quantity,
+                            data.technician,
+                            data.notes
+                        ];
+                        dataToWrite.push(row);
+                    });
+                    
+                    const tableRange = sheet.getUsedRange();
+                    tableRange.load('address, rowCount');
+                    await context.sync();
+                    
+                    let nextRow = 1;
+
+                    if (tableRange.address && tableRange.address !== sheet.name + "!A1") {
+                        nextRow = tableRange.rowCount + 1;
+                    } else {
+                        // Nếu sheet rỗng, thêm header
+                        const headers = ["Ngày bảo dưỡng", "Ca làm việc", "Máy", "Loại bảo dưỡng", "Mã vật tư", "Mô tả vật tư", "Số lượng", "Kỹ thuật viên", "Ghi chú"];
+                        sheet.getRange("A1:I1").values = [headers];
+                        sheet.getRange("A1:I1").format.font.bold = true;
+                        nextRow = 2;
+                    }
+
+                    const rangeToFill = sheet.getRange("A" + nextRow + ":I" + (nextRow + dataToWrite.length - 1));
+                    rangeToFill.values = dataToWrite;
+                    rangeToFill.format.autofitColumns();
+                    rangeToFill.format.autofitRows();
+
+                    await context.sync();
+                    console.log('Đã ghi dữ liệu vào Excel thành công!');
+                });
+            } catch (error) {
+                console.error("Lỗi khi ghi dữ liệu vào Excel:", error);
+            }
+        }
+    </script>
+</head>
+<body>
+</body>
+</html>
