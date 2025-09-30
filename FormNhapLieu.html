@@ -672,13 +672,13 @@ async function writeToExcel() {
             const sheet = context.workbook.worksheets.getItem("Maintenance Table4");
             
             // Lấy vùng dữ liệu đang được sử dụng
-            const usedRange = sheet.getUsedRange();
-            usedRange.load("rowCount");
+            const range = sheet.getUsedRange();
+            range.load("rowCount");
             
             await context.sync();
             
-            // Lấy số dòng cuối cùng
-            const lastRow = usedRange ? usedRange.rowCount : 0;
+            // Tính vị trí dòng cuối cùng
+            const lastRow = range ? range.rowCount : 0;
 
             // Lấy dữ liệu từ form
             const date = document.getElementById('maintenanceDate').value;
@@ -687,23 +687,24 @@ async function writeToExcel() {
             const person = document.getElementById('technician').options[document.getElementById('technician').selectedIndex].text;
             const notes = document.getElementById('notes').value;
 
-            // Thêm từng vật tư vào Excel theo đúng thứ tự cột
-            itemsData.forEach((item, index) => {
-                const rowIndex = lastRow + index;
-                const range = sheet.getRangeByIndexes(rowIndex, 0, 1, 8);
+            // Thêm từng vật tư vào Excel
+            for (let i = 0; i < itemsData.length; i++) {
+                const item = itemsData[i];
+                const rowNumber = lastRow + i + 1;
                 
-                // Ghi dữ liệu theo đúng thứ tự cột trong Excel
-                range.values = [[
-                    date,               // Date
-                    machine,            // MachineID
-                    item.code,          // ItemCode
-                    item.desc,          // Itemname
-                    item.quantity,      // Qty
-                    maintenanceType,    // MaintenanceType
-                    person,             // Person
-                    notes              // Notes
+                // Sử dụng getRange với địa chỉ cột A-H thay vì getRangeByIndexes
+                const newRange = sheet.getRange(`A${rowNumber}:H${rowNumber}`);
+                newRange.values = [[
+                    date,               // A - Date
+                    machine,            // B - MachineID
+                    item.code,          // C - ItemCode
+                    item.desc,          // D - Itemname
+                    item.quantity,      // E - Qty
+                    maintenanceType,    // F - MaintenanceType
+                    person,             // G - Person
+                    notes               // H - Notes
                 ]];
-            });
+            }
 
             await context.sync();
             showMessage("Đã lưu thành công vào Excel!", "success");
@@ -1121,3 +1122,4 @@ Office.onReady((info) => {
 </script>
 </body>
 </html>
+
