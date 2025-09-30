@@ -662,58 +662,58 @@ Office.onReady((info) => {
 // Function to write to Excel
 async function writeToExcel() {
     try {
+        // Kiểm tra có dữ liệu vật tư chưa
         if (itemsData.length === 0) {
             showMessage("Vui lòng thêm ít nhất một vật tư!", "error");
             return;
         }
 
         await Excel.run(async (context) => {
-            console.log("Starting Excel write...");
-            
-            // Get the active workbook
+            // Lấy sheet hiện có
             const sheet = context.workbook.worksheets.getItem("Maintenance Table4");
-            console.log("Got sheet reference");
-
-            // Get current used range to find last row
-            const range = sheet.getUsedRange();
+            
+            // Lấy vùng dữ liệu đang được sử dụng
+            const usedRange = sheet.getUsedRange();
             await context.sync();
-            const lastRow = range.rowCount;
-            console.log("Last row:", lastRow);
+            
+            // Lấy số dòng cuối cùng có dữ liệu
+            const lastRow = usedRange.rowCount;
 
-            // Get form data
-            const maintenanceDate = document.getElementById('maintenanceDate').value;
-            const machineType = document.getElementById('machineType').value;
-            const machineNumber = document.getElementById('machineNumber').value;
-            const technician = document.getElementById('technician').value;
+            // Lấy dữ liệu từ form
+            const formData = {
+                maintenanceDate: document.getElementById('maintenanceDate').value,
+                machineType: document.getElementById('machineType').value,
+                machine: document.getElementById('machine').value,
+                technician: document.getElementById('technician').value,
+                shift: document.getElementById('shift').options[document.getElementById('shift').selectedIndex].text,
+                notes: document.getElementById('notes').value
+            };
 
-            console.log("Form data:", {
-                maintenanceDate,
-                machineType,
-                machineNumber,
-                technician
-            });
-
-            // Write each item to Excel
+            // Thêm từng vật tư vào sheet
             itemsData.forEach((item, index) => {
                 const rowIndex = lastRow + index;
-                console.log("Writing row:", rowIndex + 1);
-                const newRow = sheet.getRangeByIndexes(rowIndex, 0, 1, 8);
-                newRow.values = [[
-                    maintenanceDate,
-                    machineType,
-                    machineNumber,
-                    technician,
-                    item.partNumber,
-                    item.description,
-                    item.quantity,
-                    item.remarks || ''
+                const range = sheet.getRangeByIndexes(rowIndex, 0, 1, 8);
+                
+                // Ghi dữ liệu theo cột
+                range.values = [[
+                    formData.maintenanceDate,    // Cột A - Ngày
+                    formData.machineType,        // Cột B - Loại bảo dưỡng
+                    formData.machine,            // Cột C - Mã máy
+                    formData.technician,         // Cột D - Kỹ thuật viên
+                    item.code,                   // Cột E - Mã vật tư
+                    item.desc,                   // Cột F - Mô tả
+                    item.quantity,               // Cột G - Số lượng
+                    formData.notes               // Cột H - Ghi chú
                 ]];
             });
 
             await context.sync();
-            console.log("Excel write completed");
+            
+            // Hiển thị thông báo thành công
             showMessage("Đã lưu thành công vào Excel!", "success");
-            clearForm(); // Clear form after successful save
+            
+            // Xóa form sau khi lưu
+            clearForm();
         });
     } catch (error) {
         console.error("Excel error:", error);
