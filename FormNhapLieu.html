@@ -662,7 +662,6 @@ Office.onReady((info) => {
 // Function to write to Excel
 async function writeToExcel() {
     try {
-        // Kiểm tra có dữ liệu vật tư chưa
         if (itemsData.length === 0) {
             showMessage("Vui lòng thêm ít nhất một vật tư!", "error");
             return;
@@ -670,19 +669,22 @@ async function writeToExcel() {
 
         await Excel.run(async (context) => {
             // Lấy sheet hiện có
-            const sheet = context.workbook.worksheets.getItem("Maintenance");
+            const sheet = context.workbook.worksheets.getItem("Maintenance Table4");
             
-            // Lấy vùng dữ liệu đang được sử dụng
+            // Lấy vùng dữ liệu đang được sử dụng và LOAD nó
             const usedRange = sheet.getUsedRange();
+            usedRange.load("rowCount"); // Load rowCount property
+            
+            // Đợi sync để lấy rowCount
             await context.sync();
             
-            // Lấy số dòng cuối cùng có dữ liệu
-            const lastRow = usedRange.rowCount;
+            // Bây giờ có thể an toàn truy cập rowCount
+            const lastRow = usedRange ? usedRange.rowCount : 0;
 
             // Lấy dữ liệu từ form
             const formData = {
                 maintenanceDate: document.getElementById('maintenanceDate').value,
-                machineType: document.getElementById('machineType').value,
+                machineType: document.getElementById('machineType').options[document.getElementById('machineType').selectedIndex].text,
                 machine: document.getElementById('machine').value,
                 technician: document.getElementById('technician').value,
                 shift: document.getElementById('shift').options[document.getElementById('shift').selectedIndex].text,
@@ -707,6 +709,7 @@ async function writeToExcel() {
                 ]];
             });
 
+            // Sync để lưu thay đổi
             await context.sync();
             
             // Hiển thị thông báo thành công
@@ -1127,4 +1130,3 @@ Office.onReady((info) => {
 </script>
 </body>
 </html>
-
