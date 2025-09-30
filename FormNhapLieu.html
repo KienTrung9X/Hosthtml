@@ -670,7 +670,7 @@ async function writeToExcel() {
 
         await Excel.run(async (context) => {
             // Lấy sheet hiện có
-            const sheet = context.workbook.worksheets.getItem("Maintenance Table4");
+            const sheet = context.workbook.worksheets.getItem("Maintenance");
             
             // Lấy vùng dữ liệu đang được sử dụng
             const usedRange = sheet.getUsedRange();
@@ -1127,3 +1127,4 @@ Office.onReady((info) => {
 </script>
 </body>
 </html>
+
