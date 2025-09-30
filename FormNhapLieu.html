@@ -659,7 +659,7 @@ Office.onReady((info) => {
     }
 });
 
-// Function to write to Excel
+// Thay thế hoàn toàn hàm writeToExcel cũ bằng hàm này
 async function writeToExcel() {
     try {
         if (itemsData.length === 0) {
@@ -668,17 +668,24 @@ async function writeToExcel() {
         }
 
         await Excel.run(async (context) => {
-            // Lấy sheet hiện có
-            const sheet = context.workbook.worksheets.getItem("Maintenance Table4");
-            
-            // Lấy vùng dữ liệu đang được sử dụng
-            const range = sheet.getUsedRange();
-            range.load("rowCount");
-            
+            // SỬA 1: Sử dụng trang tính đang hoạt động thay vì tên cố định
+            const sheet = context.workbook.worksheets.getActiveWorksheet();
+
+            // SỬA 2: Logic tìm dòng trống tiếp theo một cách chính xác
+            // Lấy ô cuối cùng trong cột A có dữ liệu
+            const lastCell = sheet.getRange("A:A").getUsedRange(true).getLastCell();
+            lastCell.load("rowIndex");
             await context.sync();
-            
-            // Tính vị trí dòng cuối cùng
-            const lastRow = range ? range.rowCount : 0;
+
+            // Nếu sheet trống (rowIndex của ô cuối là 0 và ô đó rỗng), bắt đầu từ dòng 0.
+            // Nếu không, bắt đầu từ dòng tiếp theo.
+            const values = lastCell.load("values");
+            await context.sync();
+
+            let startRow = lastCell.rowIndex + 1;
+            if (lastCell.rowIndex === 0 && values.values[0][0] === "") {
+                startRow = 0;
+            }
 
             // Lấy dữ liệu từ form
             const date = document.getElementById('maintenanceDate').value;
@@ -687,32 +694,33 @@ async function writeToExcel() {
             const person = document.getElementById('technician').options[document.getElementById('technician').selectedIndex].text;
             const notes = document.getElementById('notes').value;
 
-            // Thêm từng vật tư vào Excel
-            for (let i = 0; i < itemsData.length; i++) {
-                const item = itemsData[i];
-                const rowNumber = lastRow + i + 1;
-                
-                // Sử dụng getRange với địa chỉ cột A-H thay vì getRangeByIndexes
-                const newRange = sheet.getRange(`A${rowNumber}:H${rowNumber}`);
-                newRange.values = [[
-                    date,               // A - Date
-                    machine,            // B - MachineID
-                    item.code,          // C - ItemCode
-                    item.desc,          // D - Itemname
-                    item.quantity,      // E - Qty
-                    maintenanceType,    // F - MaintenanceType
-                    person,             // G - Person
-                    notes               // H - Notes
-                ]];
-            }
+            // Chuẩn bị một mảng để chứa tất cả các dòng dữ liệu mới
+            let dataToInsert = [];
+            itemsData.forEach(item => {
+                dataToInsert.push([
+                    date,               // Cột A - Date
+                    machine,            // Cột B - MachineID
+                    item.code,          // Cột C - ItemCode
+                    item.desc,          // Cột D - Itemname
+                    item.quantity,      // Cột E - Qty
+                    maintenanceType,    // Cột F - MaintenanceType
+                    person,             // Cột G - Person
+                    notes               // Cột H - Notes
+                ]);
+            });
+
+            // Ghi toàn bộ dữ liệu vào Excel trong một lần để tăng hiệu suất
+            const rangeToInsert = sheet.getRangeByIndexes(startRow, 0, dataToInsert.length, 8);
+            rangeToInsert.values = dataToInsert;
 
             await context.sync();
             showMessage("Đã lưu thành công vào Excel!", "success");
             clearForm();
         });
     } catch (error) {
-        console.error("Excel error:", error);
-        showMessage("Lỗi khi lưu vào Excel: " + error.message, "error");
+        // Hiển thị lỗi một cách chi tiết hơn để dễ dàng gỡ rối
+        console.error("Excel error:", JSON.stringify(error));
+        showMessage("Lỗi khi lưu vào Excel: " + error.debugInfo?.message, "error");
     }
 }
 
@@ -1122,3 +1130,4 @@ Office.onReady((info) => {
 </script>
 </body>
 </html>
+
