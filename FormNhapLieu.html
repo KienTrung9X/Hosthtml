@@ -256,7 +256,6 @@ input[type="date"]::-moz-calendar-picker-indicator {
   </div>
 
   <form id="excelForm">
-    <button type="button" onclick="writeToExcel()" class="btn btn-primary" style="margin-bottom: 10px;">Lưu vào Excel</button>
     <div class="form-row">
       <div>
         <label for="machine">Máy:</label>
@@ -591,9 +590,9 @@ input[type="date"]::-moz-calendar-picker-indicator {
     <div id="statusMessage" class="status-message"></div>
 
     <div class="form-actions" style="margin-top: 15px; display: flex; gap: 10px; justify-content: flex-end;">
-      <!-- XÓA nút Lưu và Xuất file, chỉ giữ lại Làm mới và Copy Clipboard -->
       <button type="button" class="btn btn-secondary" onclick="clearForm()">🔄 Làm mới</button>
       <button type="button" class="btn btn-success" onclick="copyToClipboard()">📋 Copy Clipboard</button>
+      <button type="button" onclick="writeToExcel()" class="btn btn-primary">💾 Lưu vào Excel</button>
     </div>
   </form>
 
@@ -668,9 +667,47 @@ let masterMachines = null;
 Office.onReady((info) => {
     if (info.host === Excel.HostType.Excel) {
         console.log('Excel Add-in initialized');
+        
+        // Thêm dấu hiệu khi form được mở
+        Excel.run(async (context) => {
+            try {
+                const sheet = context.workbook.worksheets.getActiveWorksheet();
+                const signalCell = sheet.getRange("K1");
+                signalCell.values = [["OPEN_FORM"]];
+                await context.sync();
+                console.log("Đã ghi dấu hiệu OPEN_FORM vào K1");
+            } catch (error) {
+                console.error("Lỗi khi ghi dấu hiệu:", error);
+            }
+        });
+
+        // Thêm event handler cho form submit
+        document.getElementById('excelForm').onsubmit = async (event) => {
+            event.preventDefault();
+        };
     } else {
         console.error('This is not running in Excel');
     }
+});
+
+// Thêm hàm xóa dấu hiệu khi đóng form
+async function clearFormSignal() {
+    try {
+        await Excel.run(async (context) => {
+            const sheet = context.workbook.worksheets.getActiveWorksheet();
+            const signalCell = sheet.getRange("K1");
+            signalCell.clear();
+            await context.sync();
+            console.log("Đã xóa dấu hiệu từ K1");
+        });
+    } catch (error) {
+        console.error("Lỗi khi xóa dấu hiệu:", error);
+    }
+}
+
+// Thêm event listener khi đóng window
+window.addEventListener('beforeunload', () => {
+    clearFormSignal();
 });
 
 // Thay thế hoàn toàn hàm writeToExcel cũ bằng hàm này
