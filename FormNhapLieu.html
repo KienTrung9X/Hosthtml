@@ -15,23 +15,23 @@
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
+    margin: 0;
+    padding: 10px;
+    background: #f5f7fa;
+    height: 100vh;
+    overflow-y: auto;
+}
 
-  .container {
+.container {
     background: #ffffff;
-    border-radius: 16px; 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-    padding: 32px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    padding: 15px;
     width: 100%;
-    max-width: 800px;
-    animation: fadeIn 0.5s ease-out;
-  }
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0 auto;
+}
 
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px); }
@@ -45,21 +45,21 @@
 
   .form-header h1 {
     color: #2d3748;
-    font-size: 2.25rem;
+    font-size: 1.5rem;
     font-weight: 700;
-    margin-bottom: 8px;
+    margin-bottom: 5px;
   }
 
   .form-header p {
     color: #718096;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
   }
 
   .form-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 24px;
-    margin-bottom: 28px;
+    gap: 12px;
+    margin-bottom: 15px;
   }
 
   label {
@@ -90,8 +90,8 @@
   .list-section {
     background: #f8fafc;
     border-radius: 12px;
-    padding: 24px;
-    margin: 24px 0;
+    padding: 15px;
+    margin: 15px 0;
   }
 
   .list-section h3 {
@@ -105,8 +105,7 @@
 
   .input-group {
     display: flex;
-    gap: 12px;
-    margin-bottom: 16px;
+    gap: 8px;
   }
 
   .list-item {
@@ -121,20 +120,20 @@
   }
 
   .btn {
-    padding: 8px 16px;
+    padding: 6px 12px;
     border: none;
     border-radius: 6px;
     font-weight: 500;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     cursor: pointer;
     transition: all 0.2s;
-    min-width: 80px;
+    min-width: 60px;
   }
 
   .btn-small {
-    padding: 6px 12px;
-    font-size: 0.8rem;
-    min-width: 60px;
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    min-width: 40px;
   }
   
   .btn-primary {
@@ -244,15 +243,27 @@ input[type="date"]::-moz-calendar-picker-indicator {
   cursor: pointer;
 }
 
-  @media (max-width: 640px) {
+/* Điều chỉnh padding và margin cho không gian nhỏ hơn */
+@media (max-width: 800px) {
     .container {
-      padding: 24px;
+        padding: 15px;
     }
     
     .form-row {
-      grid-template-columns: 1fr;
+        gap: 15px;
+        margin-bottom: 20px;
     }
-  }
+    
+    .list-section {
+        padding: 15px;
+        margin: 15px 0;
+    }
+    
+    .input-group {
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+}
   </style>
 </head>
 <body>
@@ -674,6 +685,12 @@ let masterMachines = null;
 Office.onReady((info) => {
     if (info.host === Excel.HostType.Excel) {
         console.log('Excel Add-in initialized');
+        
+        // Thiết lập kích thước taskpane nhỏ hơn
+        Office.context.ui.taskpaneDimensions = {
+            width: 35,  // 35% chiều rộng màn hình
+            height: 95  // 95% chiều cao màn hình
+        };
         
         // Thêm dấu hiệu khi form được mở
         Excel.run(async (context) => {
